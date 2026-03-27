@@ -1,6 +1,8 @@
 """Streamlit IPL Win Predictor – consumes the FastAPI backend."""
 
+import base64
 import urllib.parse
+from pathlib import Path
 
 import requests
 import streamlit as st
@@ -139,12 +141,19 @@ st.markdown(
     unsafe_allow_html=True,
 )
 st.markdown(
-    "<h1 style='text-align:center; margin:0 0 0.3rem;'>IPL Win Predictor</h1>",
+    "<h1 style='text-align:center; margin:0 0 0.3rem;'>IPL Winning Formula</h1>",
     unsafe_allow_html=True,
+)
+_neon_logo_path = Path(__file__).resolve().parent / "Neon logo.jpeg"
+_neon_b64 = base64.b64encode(_neon_logo_path.read_bytes()).decode() if _neon_logo_path.is_file() else ""
+_neon_img_tag = (
+    f'<img src="data:image/jpeg;base64,{_neon_b64}" '
+    f'style="height:22px; vertical-align:middle; margin-right:6px; border-radius:4px;">'
+    if _neon_b64 else ""
 )
 st.markdown(
     "<p style='text-align:center; color:#94a3b8; margin-bottom:1.5rem;'>"
-    "Powered by XGBoost  •  Select teams & venue to get win probabilities</p>",
+    f"Powered by {_neon_img_tag}NeonTechLabs  •  Select teams & venue to get win probabilities</p>",
     unsafe_allow_html=True,
 )
 
