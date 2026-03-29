@@ -10,7 +10,8 @@ import streamlit as st
 
 API_BASE = "https://nonexpiatory-paroxysmally-semaj.ngrok-free.dev"
 
-_LOGOS_DIR = Path(__file__).resolve().parent / "team logos"
+_PROJECT_ROOT = Path(__file__).resolve().parent
+_LOGOS_DIR = _PROJECT_ROOT / "team logos"
 
 TEAM_NAMES = [
     "Chennai Super Kings",
@@ -73,8 +74,8 @@ _ALL_LOGO_FILES: dict[str, str] = {
 
 
 @st.cache_data
-def _load_logo_b64(filename: str) -> str:
-    p = _LOGOS_DIR / filename
+def _load_b64(filepath: str) -> str:
+    p = Path(filepath)
     if not p.is_file():
         return ""
     return base64.b64encode(p.read_bytes()).decode()
@@ -84,59 +85,70 @@ def _logo_src(name: str) -> str:
     fn = _ALL_LOGO_FILES.get(name, "")
     if not fn:
         return ""
-    b64 = _load_logo_b64(fn)
+    b64 = _load_b64(str(_LOGOS_DIR / fn))
     return f"data:image/png;base64,{b64}" if b64 else ""
+
+
+@st.cache_data
+def _stadium_bg_src() -> str:
+    b64 = _load_b64(str(_PROJECT_ROOT / "stadium.jpg"))
+    return f"data:image/jpeg;base64,{b64}" if b64 else ""
 
 
 # ─── Page config ───
 st.set_page_config(page_title="IPL Win Predictor", page_icon="🏏", layout="wide")
 
+_stadium_src = _stadium_bg_src()
+
 # ─── CSS ───
 st.markdown(
-    """
+    f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
 
-    .stApp {
-        background: linear-gradient(160deg, #0a0a1a 0%, #121236 40%, #1a0a2e 70%, #0d0d20 100%);
+    .stApp {{
+        background: #0d0d1a;
         color: #f0f0f0;
         font-family: 'Inter', sans-serif;
-    }
+    }}
 
-    /* Animated starfield background */
-    .stApp::before {
-        content: '';
-        position: fixed; top: 0; left: 0;
-        width: 100vw; height: 100vh;
-        background-image:
-            radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.15) 50%, transparent 50%),
-            radial-gradient(1px 1px at 30% 60%, rgba(255,255,255,0.12) 50%, transparent 50%),
-            radial-gradient(1px 1px at 50% 10%, rgba(255,255,255,0.1) 50%, transparent 50%),
-            radial-gradient(1px 1px at 70% 80%, rgba(255,255,255,0.08) 50%, transparent 50%),
-            radial-gradient(1px 1px at 90% 40%, rgba(255,255,255,0.12) 50%, transparent 50%),
-            radial-gradient(2px 2px at 15% 85%, rgba(255,255,255,0.06) 50%, transparent 50%),
-            radial-gradient(2px 2px at 85% 15%, rgba(255,255,255,0.06) 50%, transparent 50%);
+    /* Stadium background */
+    .stadium-bg {{
+        position: fixed;
+        top: 0; left: 0; width: 100vw; height: 100vh;
         pointer-events: none;
         z-index: 0;
-    }
+        background: url("{_stadium_src}") center center / cover no-repeat;
+        opacity: 0.25;
+    }}
+    /* Dark overlay on top of stadium for readability */
+    .stadium-bg::after {{
+        content: '';
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: linear-gradient(180deg,
+            rgba(10,10,26,0.5) 0%,
+            rgba(10,10,26,0.3) 40%,
+            rgba(10,10,26,0.6) 100%);
+    }}
 
     /* IPL header */
-    .ipl-hero {
+    .ipl-hero {{
         text-align: center;
         padding: 2rem 0 0.5rem;
         position: relative;
-        z-index: 1;
-    }
-    .ipl-hero img {
+        z-index: 3;
+    }}
+    .ipl-hero img {{
         height: 110px;
         filter: drop-shadow(0 0 30px rgba(99,102,241,0.3));
         animation: float 3s ease-in-out infinite;
-    }
-    @keyframes float {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-8px); }
-    }
-    .ipl-hero h1 {
+    }}
+    @keyframes float {{
+        0%, 100% {{ transform: translateY(0); }}
+        50% {{ transform: translateY(-8px); }}
+    }}
+    .ipl-hero h1 {{
         font-size: 2.4rem;
         font-weight: 900;
         margin: 0.6rem 0 0.2rem;
@@ -144,40 +156,40 @@ st.markdown(
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         letter-spacing: -0.5px;
-    }
-    .ipl-hero p {
-        color: #64748b;
+    }}
+    .ipl-hero p {{
+        color: #94a3b8;
         font-size: 0.95rem;
         margin: 0;
-    }
+    }}
 
     /* Glass cards */
-    .team-card {
-        background: rgba(255,255,255,0.04);
+    .team-card {{
+        background: rgba(255,255,255,0.06);
         border-radius: 20px;
         padding: 1.8rem 1rem;
         text-align: center;
         backdrop-filter: blur(16px);
-        border: 1px solid rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.1);
         transition: transform 0.3s, box-shadow 0.3s;
-        position: relative; z-index: 1;
-    }
-    .team-card:hover {
+        position: relative; z-index: 3;
+    }}
+    .team-card:hover {{
         transform: translateY(-4px);
-        box-shadow: 0 12px 40px rgba(99,102,241,0.15);
-    }
-    .team-card img {
+        box-shadow: 0 12px 40px rgba(99,102,241,0.2);
+    }}
+    .team-card img {{
         width: 120px; height: 120px; object-fit: contain;
         margin-bottom: 0.7rem;
         filter: drop-shadow(0 4px 12px rgba(0,0,0,0.4));
-    }
-    .team-card h3 {
+    }}
+    .team-card h3 {{
         margin: 0; font-size: 1.05rem; font-weight: 700;
         color: #e2e8f0;
-    }
+    }}
 
     /* VS */
-    .vs-badge {
+    .vs-badge {{
         font-size: 2.6rem; font-weight: 900;
         background: linear-gradient(135deg, #facc15, #f59e0b);
         -webkit-background-clip: text;
@@ -186,117 +198,146 @@ st.markdown(
         filter: drop-shadow(0 0 20px rgba(250,204,21,0.4));
         display: flex; align-items: center; justify-content: center;
         height: 100%;
-        position: relative; z-index: 1;
-    }
+        position: relative; z-index: 3;
+    }}
 
     /* Result card */
-    .result-card {
-        background: rgba(255,255,255,0.05);
+    .result-card {{
+        background: rgba(255,255,255,0.07);
         border-radius: 22px;
         padding: 2.2rem 2rem;
         text-align: center;
         backdrop-filter: blur(20px);
-        border: 1px solid rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.12);
         margin-top: 1.5rem;
-        position: relative; z-index: 1;
+        position: relative; z-index: 3;
         box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-    }
-    .winner-label {
+    }}
+    .winner-label {{
         font-size: 1.8rem; font-weight: 900; margin-bottom: 0.3rem;
         display: flex; align-items: center; justify-content: center; gap: 10px;
-    }
-    .winner-label img {
+    }}
+    .winner-label img {{
         filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));
-    }
-    .prob-bar {
-        height: 44px; border-radius: 22px; overflow: hidden;
+    }}
+    .prob-bar {{
+        height: 46px; border-radius: 23px; overflow: hidden;
         background: rgba(255,255,255,0.06);
         margin: 1rem 0;
         display: flex;
         box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
-    }
-    .prob-fill-winner {
+    }}
+    .prob-fill-winner {{
         height: 100%; display: flex; align-items: center;
-        justify-content: center; font-weight: 800; font-size: 1rem;
-        color: #fff; border-radius: 22px 0 0 22px;
+        justify-content: center; font-weight: 800; font-size: 1.05rem;
+        color: #fff; border-radius: 23px 0 0 23px;
         text-shadow: 0 1px 3px rgba(0,0,0,0.3);
-    }
-    .prob-fill-loser {
+    }}
+    .prob-fill-loser {{
         height: 100%; display: flex; align-items: center;
-        justify-content: center; font-weight: 800; font-size: 1rem;
-        color: #fff; border-radius: 0 22px 22px 0; flex: 1;
+        justify-content: center; font-weight: 800; font-size: 1.05rem;
+        color: #fff; border-radius: 0 23px 23px 0; flex: 1;
         text-shadow: 0 1px 3px rgba(0,0,0,0.3);
-    }
-    .result-teams {
+    }}
+    .result-teams {{
         display: flex; justify-content: center; align-items: center;
         gap: 2rem; margin-top: 0.6rem; flex-wrap: wrap;
-    }
-    .result-teams .rt-item {
+    }}
+    .result-teams .rt-item {{
         display: flex; align-items: center; gap: 8px; font-weight: 600;
-    }
-    .result-teams img { filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3)); }
-    .ground-tag {
+    }}
+    .result-teams img {{ filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3)); }}
+    .ground-tag {{
         display: inline-block;
-        background: rgba(255,255,255,0.08);
+        background: rgba(255,255,255,0.1);
         padding: 0.35rem 1.2rem;
         border-radius: 20px;
         font-size: 0.85rem;
         margin-top: 0.8rem;
         color: #94a3b8;
-        border: 1px solid rgba(255,255,255,0.06);
-    }
+        border: 1px solid rgba(255,255,255,0.08);
+    }}
 
     /* Selectbox styling */
-    div[data-testid="stSelectbox"] label {
+    div[data-testid="stSelectbox"] label {{
         color: #cbd5e1 !important;
         font-weight: 600 !important;
-    }
+    }}
 
     /* Background split logos overlay */
-    .bg-logos-overlay {
+    .bg-logos-overlay {{
         position: fixed;
         top: 0; left: 0; width: 100vw; height: 100vh;
         pointer-events: none;
-        z-index: 0;
+        z-index: 1;
         display: flex;
-    }
-    .bg-logo-half {
+    }}
+    .bg-logo-half {{
         flex: 1;
         display: flex;
         align-items: center;
         justify-content: center;
-    }
-    .bg-logo-half img {
-        width: 60%;
-        max-width: 380px;
-        opacity: 0.06;
-        filter: grayscale(30%) blur(1px);
-    }
+    }}
+    .bg-logo-half img {{
+        width: 65%;
+        max-width: 400px;
+        opacity: 0.15;
+        filter: grayscale(10%);
+    }}
 
     /* Divider */
-    .section-divider {
+    .section-divider {{
         width: 60px; height: 3px; margin: 1rem auto;
         background: linear-gradient(90deg, #6366f1, #a78bfa);
         border-radius: 3px;
-    }
+    }}
 
-    /* Subheader */
-    .mode-title {
+    /* Mode title */
+    .mode-title {{
         text-align: center; font-size: 1.3rem; font-weight: 800;
         color: #c7d2fe; margin-bottom: 0.2rem;
-        position: relative; z-index: 1;
-    }
+        position: relative; z-index: 3;
+    }}
+
+    /* ─── Toggle button overrides: green = active, white = inactive ─── */
+    /* Selected (primary) → bright green */
+    div[data-testid="stHorizontalBlock"] button[kind="primary"] {{
+        background-color: #16a34a !important;
+        border-color: #16a34a !important;
+        color: #fff !important;
+        font-weight: 800 !important;
+        box-shadow: 0 0 18px rgba(22,163,74,0.45) !important;
+    }}
+    div[data-testid="stHorizontalBlock"] button[kind="primary"]:hover {{
+        background-color: #15803d !important;
+        border-color: #15803d !important;
+    }}
+    /* Unselected (secondary) → solid white, dark text */
+    div[data-testid="stHorizontalBlock"] button[kind="secondary"] {{
+        background-color: #ffffff !important;
+        border: 2px solid #e2e8f0 !important;
+        color: #1e293b !important;
+        font-weight: 700 !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+    }}
+    div[data-testid="stHorizontalBlock"] button[kind="secondary"]:hover {{
+        background-color: #f1f5f9 !important;
+        border-color: #cbd5e1 !important;
+    }}
     </style>
     """,
     unsafe_allow_html=True,
 )
+
+# ─── Stadium background ───
+st.markdown('<div class="stadium-bg"></div>', unsafe_allow_html=True)
 
 # ─── Header ───
 st.markdown(
     f"""<div class="ipl-hero">
         <img src="{_logo_src('IPL')}" alt="IPL">
         <h1>IPL Win Predictor</h1>
-        <p>Powered by NeonTech Labs | Select teams & venue to get win probabilities</p>
+        <p>Powered by NeonTech Labs  |  Select teams & venue to get win probabilities</p>
     </div>""",
     unsafe_allow_html=True,
 )
@@ -310,7 +351,7 @@ with _c_toggle:
     tc1, tc2 = st.columns(2)
     with tc1:
         if st.button(
-            "⚡ Before Toss",
+            "🪙 Before Toss",
             key="sw_before",
             type="primary" if st.session_state.mode == "before" else "secondary",
             use_container_width=True,
@@ -378,10 +419,10 @@ def _render_result(data: dict):
     st.markdown(
         f"""<div class="result-card">
             <div class="winner-label" style="color:{w_color};">
-                <img src="{w_logo}" width="40">
+                <img src="{w_logo}" width="42">
                 {winner}
             </div>
-            <p style="margin:0; color:#64748b; font-size:0.9rem;">is predicted to win</p>
+            <p style="margin:0; color:#94a3b8; font-size:0.9rem;">is predicted to win</p>
             <div class="prob-bar">
                 <div class="prob-fill-winner"
                      style="width:{w_pct:.1f}%; background: linear-gradient(90deg, {w_color}, {w_color}cc);">
@@ -394,12 +435,12 @@ def _render_result(data: dict):
             </div>
             <div class="result-teams">
                 <div class="rt-item">
-                    <img src="{w_logo}" width="30">
-                    <span style="color:{w_color};">{winner} — {wp*100:.1f}%</span>
+                    <img src="{w_logo}" width="32">
+                    <span style="color:{w_color}; font-size:1.05rem;">{winner} — {wp*100:.1f}%</span>
                 </div>
                 <div class="rt-item">
-                    <img src="{l_logo}" width="30">
-                    <span style="color:{l_color};">{loser} — {lp*100:.1f}%</span>
+                    <img src="{l_logo}" width="32">
+                    <span style="color:{l_color}; font-size:1.05rem;">{loser} — {lp*100:.1f}%</span>
                 </div>
             </div>
             <div class="ground-tag">📍 {ground}</div>
