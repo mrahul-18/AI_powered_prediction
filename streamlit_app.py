@@ -57,7 +57,7 @@ TEAM_COLORS = {
     "Sunrisers Hyderabad": "#F97316",
 }
 
-_TEAM_LOGO_FILES = {
+_ALL_LOGO_FILES: dict[str, str] = {
     "Chennai Super Kings": "Chennai Super Kings.png",
     "Delhi Capitals": "Delhi Capitals.png",
     "Gujarat Titans": "Gujarat Titans.png",
@@ -68,6 +68,7 @@ _TEAM_LOGO_FILES = {
     "Rajasthan Royals": "Rajasthan Royals.png",
     "Royal Challengers Bengaluru": "Royal Challengers Bengaluru.png",
     "Sunrisers Hyderabad": "Sunrisers Hyderabad.png",
+    "IPL": "ipl logo.png",
 }
 
 
@@ -79,91 +80,177 @@ def _load_logo_b64(filename: str) -> str:
     return base64.b64encode(p.read_bytes()).decode()
 
 
-@st.cache_data
-def _load_ipl_logo_b64() -> str:
-    p = _LOGOS_DIR / "ipl logo.png"
-    if not p.is_file():
-        return ""
-    return base64.b64encode(p.read_bytes()).decode()
-
-
-def _team_logo_src(name: str) -> str:
-    fn = _TEAM_LOGO_FILES.get(name)
+def _logo_src(name: str) -> str:
+    fn = _ALL_LOGO_FILES.get(name, "")
     if not fn:
         return ""
     b64 = _load_logo_b64(fn)
     return f"data:image/png;base64,{b64}" if b64 else ""
 
 
-def _ipl_logo_src() -> str:
-    b64 = _load_ipl_logo_b64()
-    return f"data:image/png;base64,{b64}" if b64 else ""
-
-
+# ─── Page config ───
 st.set_page_config(page_title="IPL Win Predictor", page_icon="🏏", layout="wide")
 
+# ─── CSS ───
 st.markdown(
     """
     <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+
     .stApp {
-        background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+        background: linear-gradient(160deg, #0a0a1a 0%, #121236 40%, #1a0a2e 70%, #0d0d20 100%);
         color: #f0f0f0;
+        font-family: 'Inter', sans-serif;
     }
-    .ipl-header {
-        display: flex; justify-content: center; padding: 1rem 0 0.5rem;
+
+    /* Animated starfield background */
+    .stApp::before {
+        content: '';
+        position: fixed; top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        background-image:
+            radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.15) 50%, transparent 50%),
+            radial-gradient(1px 1px at 30% 60%, rgba(255,255,255,0.12) 50%, transparent 50%),
+            radial-gradient(1px 1px at 50% 10%, rgba(255,255,255,0.1) 50%, transparent 50%),
+            radial-gradient(1px 1px at 70% 80%, rgba(255,255,255,0.08) 50%, transparent 50%),
+            radial-gradient(1px 1px at 90% 40%, rgba(255,255,255,0.12) 50%, transparent 50%),
+            radial-gradient(2px 2px at 15% 85%, rgba(255,255,255,0.06) 50%, transparent 50%),
+            radial-gradient(2px 2px at 85% 15%, rgba(255,255,255,0.06) 50%, transparent 50%);
+        pointer-events: none;
+        z-index: 0;
     }
-    .ipl-header img { height: 100px; }
-    .team-card {
-        background: rgba(255,255,255,0.07);
-        border-radius: 18px;
-        padding: 1.5rem 1rem;
+
+    /* IPL header */
+    .ipl-hero {
         text-align: center;
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(255,255,255,0.12);
+        padding: 2rem 0 0.5rem;
+        position: relative;
+        z-index: 1;
+    }
+    .ipl-hero img {
+        height: 110px;
+        filter: drop-shadow(0 0 30px rgba(99,102,241,0.3));
+        animation: float 3s ease-in-out infinite;
+    }
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-8px); }
+    }
+    .ipl-hero h1 {
+        font-size: 2.4rem;
+        font-weight: 900;
+        margin: 0.6rem 0 0.2rem;
+        background: linear-gradient(135deg, #e0e7ff, #a5b4fc, #818cf8);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        letter-spacing: -0.5px;
+    }
+    .ipl-hero p {
+        color: #64748b;
+        font-size: 0.95rem;
+        margin: 0;
+    }
+
+    /* Glass cards */
+    .team-card {
+        background: rgba(255,255,255,0.04);
+        border-radius: 20px;
+        padding: 1.8rem 1rem;
+        text-align: center;
+        backdrop-filter: blur(16px);
+        border: 1px solid rgba(255,255,255,0.08);
+        transition: transform 0.3s, box-shadow 0.3s;
+        position: relative; z-index: 1;
+    }
+    .team-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 40px rgba(99,102,241,0.15);
     }
     .team-card img {
-        width: 110px; height: 110px; object-fit: contain; margin-bottom: 0.5rem;
+        width: 120px; height: 120px; object-fit: contain;
+        margin-bottom: 0.7rem;
+        filter: drop-shadow(0 4px 12px rgba(0,0,0,0.4));
     }
-    .team-card h3 { margin: 0; font-size: 1.1rem; }
+    .team-card h3 {
+        margin: 0; font-size: 1.05rem; font-weight: 700;
+        color: #e2e8f0;
+    }
+
+    /* VS */
     .vs-badge {
-        font-size: 2.2rem; font-weight: 800; color: #facc15;
-        text-shadow: 0 0 20px rgba(250,204,21,0.5);
-        display: flex; align-items: center; justify-content: center; height: 100%;
+        font-size: 2.6rem; font-weight: 900;
+        background: linear-gradient(135deg, #facc15, #f59e0b);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: none;
+        filter: drop-shadow(0 0 20px rgba(250,204,21,0.4));
+        display: flex; align-items: center; justify-content: center;
+        height: 100%;
+        position: relative; z-index: 1;
     }
+
+    /* Result card */
     .result-card {
-        background: rgba(255,255,255,0.08);
-        border-radius: 18px;
-        padding: 2rem;
+        background: rgba(255,255,255,0.05);
+        border-radius: 22px;
+        padding: 2.2rem 2rem;
         text-align: center;
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(255,255,255,0.15);
-        margin-top: 1rem;
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        margin-top: 1.5rem;
+        position: relative; z-index: 1;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    .winner-label {
+        font-size: 1.8rem; font-weight: 900; margin-bottom: 0.3rem;
+        display: flex; align-items: center; justify-content: center; gap: 10px;
+    }
+    .winner-label img {
+        filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));
     }
     .prob-bar {
-        height: 38px; border-radius: 19px; overflow: hidden;
-        background: rgba(255,255,255,0.1);
-        margin: 0.8rem 0;
+        height: 44px; border-radius: 22px; overflow: hidden;
+        background: rgba(255,255,255,0.06);
+        margin: 1rem 0;
         display: flex;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
     }
     .prob-fill-winner {
         height: 100%; display: flex; align-items: center;
-        justify-content: center; font-weight: 700; font-size: 0.95rem;
-        color: #fff; border-radius: 19px 0 0 19px;
+        justify-content: center; font-weight: 800; font-size: 1rem;
+        color: #fff; border-radius: 22px 0 0 22px;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.3);
     }
     .prob-fill-loser {
         height: 100%; display: flex; align-items: center;
-        justify-content: center; font-weight: 700; font-size: 0.95rem;
-        color: #fff; border-radius: 0 19px 19px 0; flex: 1;
+        justify-content: center; font-weight: 800; font-size: 1rem;
+        color: #fff; border-radius: 0 22px 22px 0; flex: 1;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.3);
     }
-    .winner-label {
-        font-size: 1.6rem; font-weight: 800; margin-bottom: 0.2rem;
+    .result-teams {
+        display: flex; justify-content: center; align-items: center;
+        gap: 2rem; margin-top: 0.6rem; flex-wrap: wrap;
     }
+    .result-teams .rt-item {
+        display: flex; align-items: center; gap: 8px; font-weight: 600;
+    }
+    .result-teams img { filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3)); }
     .ground-tag {
-        display: inline-block; background: rgba(255,255,255,0.12);
-        padding: 0.25rem 1rem; border-radius: 20px;
-        font-size: 0.85rem; margin-top: 0.5rem;
+        display: inline-block;
+        background: rgba(255,255,255,0.08);
+        padding: 0.35rem 1.2rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        margin-top: 0.8rem;
+        color: #94a3b8;
+        border: 1px solid rgba(255,255,255,0.06);
     }
-    div[data-testid="stSelectbox"] label { color: #e0e0e0 !important; }
+
+    /* Selectbox styling */
+    div[data-testid="stSelectbox"] label {
+        color: #cbd5e1 !important;
+        font-weight: 600 !important;
+    }
 
     /* Background split logos overlay */
     .bg-logos-overlay {
@@ -180,50 +267,41 @@ st.markdown(
         justify-content: center;
     }
     .bg-logo-half img {
-        width: 55%;
-        max-width: 340px;
-        opacity: 0.07;
-        filter: grayscale(20%);
+        width: 60%;
+        max-width: 380px;
+        opacity: 0.06;
+        filter: grayscale(30%) blur(1px);
     }
 
-    /* Toggle switch styling */
-    .toggle-container {
-        display: flex; justify-content: center; margin: 1.2rem 0 1.5rem;
+    /* Divider */
+    .section-divider {
+        width: 60px; height: 3px; margin: 1rem auto;
+        background: linear-gradient(90deg, #6366f1, #a78bfa);
+        border-radius: 3px;
     }
-    .toggle-wrapper {
-        display: inline-flex; background: rgba(255,255,255,0.08);
-        border-radius: 30px; padding: 4px;
-        border: 1px solid rgba(255,255,255,0.15);
-    }
-    .toggle-btn {
-        padding: 0.5rem 2rem; border-radius: 26px; font-weight: 700;
-        font-size: 0.95rem; cursor: pointer; transition: all 0.3s;
-        border: none; color: #94a3b8; background: transparent;
-    }
-    .toggle-btn.active {
-        background: linear-gradient(135deg, #6366f1, #8b5cf6);
-        color: #fff; box-shadow: 0 4px 15px rgba(99,102,241,0.4);
+
+    /* Subheader */
+    .mode-title {
+        text-align: center; font-size: 1.3rem; font-weight: 800;
+        color: #c7d2fe; margin-bottom: 0.2rem;
+        position: relative; z-index: 1;
     }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
+# ─── Header ───
 st.markdown(
-    f'<div class="ipl-header"><img src="{_ipl_logo_src()}" alt="IPL"></div>',
-    unsafe_allow_html=True,
-)
-st.markdown(
-    "<h1 style='text-align:center; margin:0 0 0.3rem;'>IPL Win Predictor</h1>",
-    unsafe_allow_html=True,
-)
-st.markdown(
-    "<p style='text-align:center; color:#94a3b8; margin-bottom:0.5rem;'>"
-    "Select teams & venue to get win probabilities</p>",
+    f"""<div class="ipl-hero">
+        <img src="{_logo_src('IPL')}" alt="IPL">
+        <h1>IPL Win Predictor</h1>
+        <p>Powered by NeonTech Labs | Select teams & venue to get win probabilities</p>
+    </div>""",
     unsafe_allow_html=True,
 )
 
-# ── Toggle switch: Before Toss / After Toss ──
+# ─── Mode toggle ───
 if "mode" not in st.session_state:
     st.session_state.mode = "before"
 
@@ -247,23 +325,18 @@ with _c_toggle:
         ):
             st.session_state.mode = "after"
 
-st.markdown("<div style='height:0.5rem'></div>", unsafe_allow_html=True)
+st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
 
+# ─── Helpers ───
 def _render_bg_logos(t1: str, t2: str):
-    """Inject a fixed full-screen overlay with both team logos, split half-half."""
-    src1 = _team_logo_src(t1)
-    src2 = _team_logo_src(t2)
+    src1, src2 = _logo_src(t1), _logo_src(t2)
     if not src1 or not src2:
         return
     st.markdown(
         f"""<div class="bg-logos-overlay">
-            <div class="bg-logo-half">
-                <img src="{src1}" alt="{t1}">
-            </div>
-            <div class="bg-logo-half">
-                <img src="{src2}" alt="{t2}">
-            </div>
+            <div class="bg-logo-half"><img src="{src1}" alt="{t1}"></div>
+            <div class="bg-logo-half"><img src="{src2}" alt="{t2}"></div>
         </div>""",
         unsafe_allow_html=True,
     )
@@ -274,7 +347,7 @@ def _render_matchup(t1: str, t2: str):
     with c1:
         st.markdown(
             f"""<div class="team-card">
-                <img src="{_team_logo_src(t1)}" alt="{t1}">
+                <img src="{_logo_src(t1)}" alt="{t1}">
                 <h3>{t1}</h3>
             </div>""",
             unsafe_allow_html=True,
@@ -284,7 +357,7 @@ def _render_matchup(t1: str, t2: str):
     with c2:
         st.markdown(
             f"""<div class="team-card">
-                <img src="{_team_logo_src(t2)}" alt="{t2}">
+                <img src="{_logo_src(t2)}" alt="{t2}">
                 <h3>{t2}</h3>
             </div>""",
             unsafe_allow_html=True,
@@ -298,32 +371,37 @@ def _render_result(data: dict):
     lp = data["lose_probability"]
     ground = data["ground"]
     w_color = TEAM_COLORS.get(winner, "#22c55e")
-    l_color = TEAM_COLORS.get(loser, "#64748b")
-    w_pct = max(wp * 100, 5)
-    w_logo = _team_logo_src(winner)
-    l_logo = _team_logo_src(loser)
+    l_color = TEAM_COLORS.get(loser, "#475569")
+    w_pct = max(wp * 100, 8)
+    w_logo = _logo_src(winner)
+    l_logo = _logo_src(loser)
     st.markdown(
         f"""<div class="result-card">
             <div class="winner-label" style="color:{w_color};">
-                <img src="{w_logo}" width="36" style="vertical-align:middle; margin-right:8px;">
+                <img src="{w_logo}" width="40">
                 {winner}
             </div>
-            <p style="margin:0; color:#94a3b8;">is predicted to win</p>
+            <p style="margin:0; color:#64748b; font-size:0.9rem;">is predicted to win</p>
             <div class="prob-bar">
-                <div class="prob-fill-winner" style="width:{w_pct:.1f}%; background:{w_color};">
+                <div class="prob-fill-winner"
+                     style="width:{w_pct:.1f}%; background: linear-gradient(90deg, {w_color}, {w_color}cc);">
                     {wp*100:.1f}%
                 </div>
-                <div class="prob-fill-loser" style="background:{l_color};">
+                <div class="prob-fill-loser"
+                     style="background: linear-gradient(90deg, {l_color}cc, {l_color});">
                     {lp*100:.1f}%
                 </div>
             </div>
-            <p style="margin:0.4rem 0 0;">
-                <img src="{w_logo}" width="28" style="vertical-align:middle;">
-                <strong>{winner}</strong>  {wp*100:.1f}%
-                &nbsp;&nbsp;|&nbsp;&nbsp;
-                <img src="{l_logo}" width="28" style="vertical-align:middle;">
-                <strong>{loser}</strong>  {lp*100:.1f}%
-            </p>
+            <div class="result-teams">
+                <div class="rt-item">
+                    <img src="{w_logo}" width="30">
+                    <span style="color:{w_color};">{winner} — {wp*100:.1f}%</span>
+                </div>
+                <div class="rt-item">
+                    <img src="{l_logo}" width="30">
+                    <span style="color:{l_color};">{loser} — {lp*100:.1f}%</span>
+                </div>
+            </div>
             <div class="ground-tag">📍 {ground}</div>
         </div>""",
         unsafe_allow_html=True,
@@ -351,9 +429,9 @@ def _call_api(endpoint: str, params: dict) -> dict | None:
         return None
 
 
-# ── Before Toss ──
+# ─── Before Toss ───
 if st.session_state.mode == "before":
-    st.subheader("Before Toss Prediction")
+    st.markdown('<div class="mode-title">Before Toss Prediction</div>', unsafe_allow_html=True)
     col1, col2, col3 = st.columns(3)
     with col1:
         bt_team1 = st.selectbox("Team 1", TEAM_NAMES, index=None, placeholder="Select Team 1", key="bt_t1")
@@ -377,9 +455,9 @@ if st.session_state.mode == "before":
             if data:
                 _render_result(data)
 
-# ── After Toss ──
+# ─── After Toss ───
 else:
-    st.subheader("After Toss Prediction")
+    st.markdown('<div class="mode-title">After Toss Prediction</div>', unsafe_allow_html=True)
     col1, col2, col3 = st.columns(3)
     with col1:
         at_bat = st.selectbox("Team Batting First", TEAM_NAMES, index=None, placeholder="Select Batting Team", key="at_bat")
